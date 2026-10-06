@@ -1,0 +1,256 @@
+@if (store.selectedField(); as field) {
+  @let verified = store.isVerified(field.key);
+  @let cell = field.cell;
+
+  <header>
+    <span class="eyebrow">
+      @if (store.pages().length > 1) {
+        Page {{ field.pageNumber }} ·
+      }
+      {{ field.section }}
+    </span>
+    <h2>{{ title(cell) }}</h2>
+    <div class="chips">
+      <span class="chip">{{ humanize(cell.kind) }}</span>
+      <span class="chip confidence" [class.low]="cell.confidence < lowConfidence">
+        AI {{ (cell.confidence * 100).toFixed(0) }}%
+      </span>
+      @if (verified) {
+        <span class="chip ok"><fiel-icon name="check" [size]="11" /> Verified</span>
+      }
+    </div>
+  </header>
+
+  @if (field.issues.length && !verified) {
+    <div class="issues">
+      @for (issue of field.issues; track issue) {
+        <p><fiel-icon name="alert" [size]="13" /> {{ issue }}</p>
+      }
+    </div>
+  }
+
+  @if (cell.kind === 'checkbox') {
+    <div class="block">
+      <span class="block-label">State</span>
+      <label class="checkbox-toggle">
+        <input type="checkbox" [checked]="cell.checked" [disabled]="store.locked()" (change)="store.toggleChecked(field.key)" />
+        {{ cell.checked ? 'Checked' : 'Unchecked' }}
+      </label>
+    </div>
+  } @else {
+    <div class="block">
+      <span class="block-label">Original</span>
+      <p class="original">{{ cell.value?.original || '—' }}</p>
+    </div>
+
+    <div class="block">
+      <div class="block-head">
+        <span class="block-label">Translation</span>
+        @if (cell.value?.original && !store.locked()) {
+          <button type="button" class="link" (click)="store.useOriginal(field.key)">Use original</button>
+        }
+      </div>
+      <textarea
+        #translation
+        class="translation-input"
+        rows="3"
+        [value]="cell.value?.translated ?? ''"
+        [disabled]="store.locked()"
+        (input)="store.updateText(field.key, 'value', text($event))"
+      ></textarea>
+      @if (cell.value?.is_literal) {
+        <p class="hint">Literal value (name, number or code). Keep it identical to the original.</p>
+      }
+    </div>
+  }
+
+  @if (cell.kind !== 'checkbox') {
+    @let image = store.cellImages().get(field.key);
+    <div class="block">
+      <span class="block-label">Image in field</span>
+      @if (image) {
+        <div class="image-card">
+          <span class="image-thumb"><img [src]="image.src" [alt]="image.name" /></span>
+          <div class="image-controls">
+            <div class="range">
+              <span>Height</span>
+              <span class="range-value">{{ image.height }}px</span>
+            </div>
+            <input
+              type="range"
+              min="24"
+              max="320"
+              [value]="image.height"
+              [disabled]="store.locked()"
+              (input)="store.updateCellImage(field.key, { height: number($event) })"
+            />
+            <div class="segmented">
+              <button type="button" [class.active]="image.x === 0" (click)="store.updateCellImage(field.key, { x: 0 })" title="Align left">
+                <fiel-icon name="alignLeft" [size]="14" />
+              </button>
+              <button type="button" [class.active]="image.x === 50" (click)="store.updateCellImage(field.key, { x: 50 })" title="Center">
+                <fiel-icon name="alignCenter" [size]="14" />
+              </button>
+              <button type="button" [class.active]="image.x === 100" (click)="store.updateCellImage(field.key, { x: 100 })" title="Align right">
+                <fiel-icon name="alignRight" [size]="14" />
+              </button>
+            </div>
+          </div>
+        </div>
+        <p class="hint drag-hint">Drag the image on the page to move it inside the field.</p>
+        <label class="switch compact">
+          <input type="checkbox" [checked]="image.showNote" (change)="store.updateCellImage(field.key, { showNote: !image.showNote })" />
+          <span class="track"></span>
+          Keep bracketed note under the image
+        </label>
+        <label class="switch compact">
+          <input type="checkbox" [checked]="image.inkBlend" (change)="store.updateCellImage(field.key, { inkBlend: !image.inkBlend })" />
+          <span class="track"></span>
+          Ink blend (hide white background)
+        </label>
+        <div class="image-links">
+          <button type="button" class="link" [disabled]="store.locked()" (click)="store.startCrop({ target: 'cell', key: field.key })">
+            Re-crop from original…
+          </button>
+          <button type="button" class="link danger" [disabled]="store.locked()" (click)="store.removeCellImage(field.key)">
+            Remove image
+          </button>
+        </div>
+      } @else {
+        <div class="image-actions">
+          @if (cell.box.length === 4) {
+            <button type="button" [disabled]="store.locked()" (click)="store.useSuggestedCrop(field.key)" title="Crop the area the AI detected for this field">
+              <fiel-icon name="sparkles" [size]="14" /> Crop AI area
+            </button>
+          }
+          <button type="button" [disabled]="store.locked()" (click)="store.startCrop({ target: 'cell', key: field.key })" title="Draw the area on the original">
+            <fiel-icon name="crop" [size]="14" /> Select area…
+          </button>
+        </div>
+        <p class="hint">Or drag an image from the Library onto this field.</p>
+      }
+    </div>
+  }
+
+  @if (cell.label; as label) {
+    <div class="block">
+      <span class="block-label">Label</span>
+      <p class="original small">{{ label.original }}</p>
+      <input
+        type="text"
+        class="label-input"
+        [value]="label.translated"
+        [disabled]="store.locked()"
+        (input)="store.updateText(field.key, 'label', text($event))"
+      />
+    </div>
+  }
+
+  <div class="footer">
+    @if (verified) {
+      <button type="button" class="verify done" [disabled]="store.locked()" (click)="store.unverify(field.key)">
+        <fiel-icon name="check" /> Verified · undo
+      </button>
+    } @else {
+      <button type="button" class="verify" [disabled]="store.locked()" (click)="store.verifyAndNext()">
+        <fiel-icon name="check" /> Verify &amp; next <kbd>⏎</kbd>
+      </button>
+    }
+    <p class="shortcuts"><kbd>Tab</kbd> next · <kbd>⇧ Tab</kbd> previous · <kbd>⇧ ⏎</kbd> new line</p>
+  </div>
+} @else if (store.selectedOverlay(); as overlay) {
+  <header>
+    <span class="eyebrow">Page element</span>
+    <h2>{{ imageOverlay()?.name ?? 'Text' }}</h2>
+  </header>
+
+  @if (textOverlay(); as t) {
+    <div class="block">
+      <span class="block-label">Content</span>
+      <textarea rows="6" [value]="t.text" [disabled]="store.locked()" (input)="patch({ text: text($event) })"></textarea>
+    </div>
+    <div class="block">
+      <span class="block-label">Typography</span>
+      <div class="tools">
+        <label class="number">
+          <span>Size</span>
+          <input type="number" min="6" max="48" [value]="t.fontSize" (input)="patch({ fontSize: number($event) })" />
+        </label>
+        <button type="button" class="tool" [class.active]="t.bold" (click)="patch({ bold: !t.bold })" title="Bold">
+          <fiel-icon name="bold" [size]="14" />
+        </button>
+        <div class="segmented">
+          <button type="button" [class.active]="t.align === 'left'" (click)="patch({ align: 'left' })" title="Align left">
+            <fiel-icon name="alignLeft" [size]="14" />
+          </button>
+          <button type="button" [class.active]="t.align === 'center'" (click)="patch({ align: 'center' })" title="Center">
+            <fiel-icon name="alignCenter" [size]="14" />
+          </button>
+          <button type="button" [class.active]="t.align === 'right'" (click)="patch({ align: 'right' })" title="Align right">
+            <fiel-icon name="alignRight" [size]="14" />
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (imageOverlay(); as img) {
+    <div class="block">
+      <label class="switch">
+        <input type="checkbox" [checked]="img.inkBlend" (change)="patch({ inkBlend: !img.inkBlend })" />
+        <span class="track"></span>
+        Ink blend <small>makes seals look printed on paper</small>
+      </label>
+    </div>
+  }
+
+  <div class="block">
+    <span class="block-label">Position &amp; size</span>
+    <div class="grid">
+      <label class="number"><span>X</span><input type="number" [value]="overlay.x" (input)="patch({ x: number($event) })" /></label>
+      <label class="number"><span>Y</span><input type="number" [value]="overlay.y" (input)="patch({ y: number($event) })" /></label>
+      <label class="number"><span>W</span><input type="number" [value]="overlay.width" (input)="patch({ width: number($event) })" /></label>
+      @if (imageOverlay()) {
+        <label class="number"><span>H</span><input type="number" [value]="overlay.height" (input)="patch({ height: number($event) })" /></label>
+      }
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="range">
+      <span class="block-label">Rotation</span>
+      <span class="range-value">{{ overlay.rotation }}°</span>
+    </div>
+    <input type="range" min="-45" max="45" [value]="overlay.rotation" (input)="patch({ rotation: number($event) })" />
+    <div class="range">
+      <span class="block-label">Opacity</span>
+      <span class="range-value">{{ (overlay.opacity * 100).toFixed(0) }}%</span>
+    </div>
+    <input type="range" min="0.1" max="1" step="0.05" [value]="overlay.opacity" (input)="patch({ opacity: number($event) })" />
+  </div>
+
+  <div class="actions">
+    <button type="button" (click)="store.reorderOverlay(overlay.id, true)" title="Bring to front"><fiel-icon name="front" [size]="14" /></button>
+    <button type="button" (click)="store.reorderOverlay(overlay.id, false)" title="Send to back"><fiel-icon name="back" [size]="14" /></button>
+    <button type="button" (click)="store.duplicateOverlay(overlay.id)" title="Duplicate"><fiel-icon name="copy" [size]="14" /></button>
+    <button type="button" class="danger" (click)="store.removeOverlay(overlay.id)" title="Delete (⌫)"><fiel-icon name="trash" [size]="14" /> Delete</button>
+  </div>
+} @else {
+  <div class="empty">
+    <div class="empty-icon"><fiel-icon name="keyboard" [size]="22" /></div>
+    <h2>{{ store.approved() ? 'Approved and locked' : 'Select a field to review' }}</h2>
+    <p>
+      {{ store.approved()
+        ? 'Reopen the document from the top bar to make changes.'
+        : 'Click any field on the page, the original, or the list. Press Tab to start from the first one.' }}
+    </p>
+    <ul class="shortcut-list">
+      <li><kbd>Tab</kbd> Next field</li>
+      <li><kbd>⏎</kbd> Verify &amp; go to next pending</li>
+      <li><kbd>Esc</kbd> Deselect</li>
+      <li><kbd>⌘ +</kbd> / <kbd>⌘ −</kbd> Zoom · <kbd>⌘ 0</kbd> Fit</li>
+      <li><kbd>⌫</kbd> Delete selected element</li>
+      <li><kbd>⌘ \</kbd> Hide / show side panels</li>
+    </ul>
+  </div>
+}

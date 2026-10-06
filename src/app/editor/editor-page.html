@@ -1,0 +1,58 @@
+<fiel-top-bar (openDocument)="open($event)" />
+
+<div class="body" [style.grid-template-columns]="bodyColumns()">
+  <aside class="left" [class.collapsed]="!store.leftPanelOpen()" [inert]="!store.leftPanelOpen()">
+    <div class="panel-inner">
+      <nav class="tabs">
+        <button type="button" [class.active]="leftTab() === 'fields'" (click)="leftTab.set('fields')">
+          <fiel-icon name="list" [size]="14" /> Fields
+        </button>
+        <button type="button" [class.active]="leftTab() === 'library'" (click)="leftTab.set('library')">
+          <fiel-icon name="grid" [size]="14" /> Library
+        </button>
+      </nav>
+      @if (leftTab() === 'fields') {
+        <fiel-fields-list />
+      } @else {
+        <fiel-library-panel />
+      }
+    </div>
+  </aside>
+
+  <main class="center" #center [style.grid-template-columns]="centerColumns()">
+    @if (showSource()) {
+      <fiel-source-view (hide)="showSource.set(false)" />
+      <div
+        class="splitter"
+        [class.active]="resizing()"
+        title="Drag to resize · double-click to reset"
+        (pointerdown)="startResize($event)"
+        (pointermove)="resize($event)"
+        (pointerup)="endResize()"
+        (pointercancel)="endResize()"
+        (dblclick)="sourceWidth.set(null)"
+      ></div>
+    } @else {
+      <button type="button" class="show-source" (click)="showSource.set(true)">
+        <fiel-icon name="panel" [size]="14" /> Show original
+      </button>
+    }
+    <fiel-page-canvas />
+  </main>
+
+  <aside class="right" [class.collapsed]="!store.rightPanelOpen()" [inert]="!store.rightPanelOpen()">
+    <div class="panel-inner">
+      <fiel-inspector />
+    </div>
+  </aside>
+</div>
+
+@if (loadError(); as error) {
+  <div class="banner error">{{ error }}</div>
+}
+
+@if (store.toast(); as message) {
+  <div class="toast" role="status">
+    <fiel-icon name="check" [size]="14" /> {{ message }}
+  </div>
+}

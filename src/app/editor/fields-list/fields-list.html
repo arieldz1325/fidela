@@ -1,0 +1,49 @@
+<div class="filters">
+  <button type="button" [class.active]="filter() === 'all'" (click)="filter.set('all')">
+    All <span>{{ store.fields().length }}</span>
+  </button>
+  <button type="button" [class.active]="filter() === 'attention'" (click)="filter.set('attention')">
+    To check <span class="warn">{{ store.attentionCount() }}</span>
+  </button>
+  <button type="button" [class.active]="filter() === 'pending'" (click)="filter.set('pending')">
+    Pending <span>{{ pendingCount() }}</span>
+  </button>
+</div>
+
+<div class="list">
+  @for (group of groups(); track group.pageNumber + group.section + $index) {
+    @if (group.startsPage && store.pages().length > 1) {
+      <h2 class="page-heading">Page {{ group.pageNumber }}</h2>
+    }
+    <h3 class="group">{{ group.section }}</h3>
+    @for (field of group.fields; track field.key) {
+      @let verified = store.isVerified(field.key);
+      <button
+        type="button"
+        class="item"
+        [class.selected]="field.key === store.selectedKey()"
+        (click)="store.selectField(field.key)"
+      >
+        <span class="status" [class.verified]="verified" [class.attention]="!verified && field.issues.length">
+          @if (verified) {
+            <fiel-icon name="check" [size]="11" />
+          } @else if (field.issues.length) {
+            <fiel-icon name="alert" [size]="11" />
+          }
+        </span>
+        <span class="text">
+          <span class="title">{{ title(field.cell) }}</span>
+          <span class="preview" [class.annotation]="field.cell.kind === 'annotation'">{{ preview(field.cell) }}</span>
+        </span>
+        @if (store.edited().has(field.key)) {
+          <span class="edited" title="Edited by translator"></span>
+        }
+      </button>
+    }
+  } @empty {
+    <div class="empty">
+      <fiel-icon name="check" [size]="20" />
+      <p>Nothing here</p>
+    </div>
+  }
+</div>

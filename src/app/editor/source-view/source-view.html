@@ -1,0 +1,113 @@
+<header>
+  <span class="title">Original</span>
+  <div class="segmented">
+    <button type="button" [class.active]="!follow() && !isManual()" (click)="setFollow(false)" title="Show the whole document">
+      <fiel-icon name="fit" [size]="13" /> Fit
+    </button>
+    <button type="button" [class.active]="follow() && !isManual()" (click)="setFollow(true)" title="Zoom into the selected field">
+      <fiel-icon name="focus" [size]="13" /> Follow
+    </button>
+  </div>
+  <div class="zoom">
+    <button type="button" class="icon-btn" (click)="zoomBy(1 / 1.25)" title="Zoom out">
+      <fiel-icon name="minus" [size]="13" />
+    </button>
+    <button type="button" class="zoom-value" (click)="resetView()" title="Reset view">{{ zoomPercent() }}%</button>
+    <button type="button" class="icon-btn" (click)="zoomBy(1.25)" title="Zoom in">
+      <fiel-icon name="plus" [size]="13" />
+    </button>
+  </div>
+  <button
+    type="button"
+    class="icon-btn"
+    [class.active]="cropping()"
+    [disabled]="store.locked()"
+    (click)="cropping() ? store.cancelCrop() : store.startCrop({ target: 'library' })"
+    title="Crop an area into the Library"
+  >
+    <fiel-icon name="crop" [size]="14" />
+  </button>
+  <button type="button" class="icon-btn" (click)="hide.emit()" title="Hide original">
+    <fiel-icon name="x" [size]="14" />
+  </button>
+</header>
+
+<div
+  class="viewport"
+  #viewport
+  [class.panning]="panning()"
+  [class.cropping]="cropping()"
+  (wheel)="onWheel($event)"
+  (pointerdown)="onPointerDown($event)"
+  (pointermove)="onPointerMove($event)"
+  (pointerup)="onPointerUp()"
+  (pointercancel)="onPointerUp()"
+  (dblclick)="resetView()"
+>
+  @if (store.currentPage(); as page) {
+    <div
+      class="image"
+      [class.animated]="!isManual()"
+      [style.transform]="transform()"
+      [style.--inverse-scale]="1 / view().scale"
+    >
+      <img #image [src]="page.image" alt="Original document" draggable="false" (load)="onImageLoad($event)" />
+
+      @for (field of boxedFields(); track field.key) {
+        <button
+          type="button"
+          class="region"
+          [class.selected]="field.key === store.selectedKey()"
+          [class.verified]="store.isVerified(field.key)"
+          [class.attention]="!store.isVerified(field.key) && field.issues.length"
+          [style]="boxStyle(field.cell.box)"
+          (click)="store.selectField(field.key)"
+          [attr.aria-label]="'Select field ' + field.key"
+        ></button>
+      }
+
+      @if (cropDraft(); as box) {
+        <div class="crop-rect" [style]="boxStyle(box)"></div>
+      }
+    </div>
+  }
+
+  @if (cropping()) {
+    <div class="crop-banner">
+      <fiel-icon name="crop" [size]="14" />
+      Draw a rectangle to crop into {{ cropTarget() }}
+      <button type="button" (click)="store.cancelCrop()">Cancel</button>
+    </div>
+  } @else {
+    <span class="hint">Drag to move · ⌘ + scroll to zoom · double-click to reset</span>
+  }
+
+  @if (store.pages().length > 1) {
+    <nav class="pager" aria-label="Pages">
+      <button type="button" class="step" [disabled]="store.activePage() === 0" (click)="store.showPage(store.activePage() - 1)" title="Previous page">
+        <fiel-icon name="chevronLeft" [size]="14" />
+      </button>
+      @for (p of store.pages(); track p.page_number; let i = $index) {
+        <button
+          type="button"
+          class="thumb"
+          [class.active]="i === store.activePage()"
+          (click)="store.showPage(i)"
+          [title]="'Page ' + p.page_number"
+        >
+          <img [src]="p.image" alt="" draggable="false" />
+          <span>{{ p.page_number }}</span>
+        </button>
+      }
+      <button
+        type="button"
+        class="step"
+        [disabled]="store.activePage() === store.pages().length - 1"
+        (click)="store.showPage(store.activePage() + 1)"
+        title="Next page"
+      >
+        <fiel-icon name="chevronRight" [size]="14" />
+      </button>
+    </nav>
+  }
+</div>

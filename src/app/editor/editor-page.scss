@@ -1,0 +1,182 @@
+:host {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.body {
+  display: grid;
+  min-height: 0;
+  transition: grid-template-columns 0.22s ease;
+}
+
+.left,
+.right {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--panel);
+  transition: opacity 0.18s ease;
+
+  &.collapsed {
+    border-color: transparent;
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+.left {
+  border-right: 1px solid var(--border);
+}
+
+.right {
+  border-left: 1px solid var(--border);
+}
+
+// Fixed inner width so the content slides instead of reflowing while the column animates.
+.panel-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.left .panel-inner {
+  width: 272px;
+}
+
+.right .panel-inner {
+  width: 320px;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px 0;
+  border-bottom: 1px solid var(--border);
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: -1px;
+    padding: 8px 10px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--text-muted);
+    font-weight: 600;
+
+    &.active {
+      border-bottom-color: var(--accent);
+      color: var(--text);
+    }
+  }
+}
+
+.center {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+}
+
+.splitter {
+  position: relative;
+  z-index: 2;
+  background: var(--viewer-bg);
+  cursor: col-resize;
+  touch-action: none;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0 2px;
+    border-radius: 2px;
+    background: transparent;
+    transition: background 0.15s ease;
+  }
+
+  &:hover::after,
+  &.active::after {
+    background: var(--accent);
+  }
+}
+
+.show-source {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel);
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+}
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: #18181b;
+  color: #fff;
+  font-weight: 500;
+  box-shadow: var(--shadow-pop);
+  transform: translateX(-50%);
+  animation: rise 0.25s ease;
+}
+
+.banner.error {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  background: #fef2f2;
+  color: var(--danger);
+  box-shadow: var(--shadow-pop);
+  transform: translateX(-50%);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+/* Only the translated page (and the attached original) go to the PDF. */
+@media print {
+  :host {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+
+  fiel-top-bar,
+  .left,
+  .right,
+  fiel-source-view,
+  .splitter,
+  .show-source,
+  .toast,
+  .banner {
+    display: none !important;
+  }
+
+  .body,
+  .center {
+    display: block;
+  }
+}

@@ -1,0 +1,59 @@
+:host {
+  position: absolute;
+  z-index: 2;
+  touch-action: none;
+  user-select: none;
+  outline: 1px solid transparent;
+  outline-offset: 2px;
+  transition: outline-color 0.12s ease;
+}
+
+:host(.editable) {
+  cursor: move;
+
+  &:hover {
+    outline-color: rgb(79 70 229 / 0.45);
+  }
+}
+
+:host(.selected.editable) {
+  outline: 1.5px solid var(--accent);
+}
+
+img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.text {
+  min-height: 1.4em;
+  color: #111;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+@media print {
+  :host {
+    outline: none !important;
+  }
+
+  .handle {
+    display: none;
+  }
+}
+
+.handle {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid var(--accent);
+  border-radius: 2px;
+  background: #fff;
+  cursor: nwse-resize;
+}

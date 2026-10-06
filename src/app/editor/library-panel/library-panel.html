@@ -1,0 +1,103 @@
+<section>
+  <header>
+    <h3>My assets</h3>
+    <button
+      type="button"
+      class="text-btn"
+      [disabled]="store.locked()"
+      (click)="store.startCrop({ target: 'library' })"
+      title="Cut an area out of the original document"
+    >
+      <fiel-icon name="crop" [size]="14" /> Crop
+    </button>
+    <label class="upload" title="Upload seal, signature, logo, letterhead or image">
+      <fiel-icon name="upload" [size]="14" /> Upload
+      <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" multiple (change)="upload($event)" />
+    </label>
+  </header>
+
+  <div class="assets">
+    @for (asset of store.assets(); track asset.id) {
+      <div
+        class="asset"
+        draggable="true"
+        title="Drag onto the page"
+        (dragstart)="startDrag($event, { kind: 'asset', id: asset.id })"
+      >
+        <span class="thumb"><img [src]="asset.src" [alt]="asset.name" draggable="false" /></span>
+        <span class="name">{{ asset.name }}</span>
+
+        <div class="actions">
+          <button type="button" class="add" [disabled]="store.locked()" (click)="store.addImage(asset)" title="Add to page">
+            <fiel-icon name="plus" [size]="12" /> Add
+          </button>
+          <button
+            type="button"
+            [disabled]="store.locked()"
+            (click)="store.setPageBackground(asset)"
+            title="Use as page background (letterhead)"
+          >
+            <fiel-icon name="letterhead" [size]="12" />
+          </button>
+          @if (!asset.builtIn) {
+            <button type="button" class="danger" (click)="store.removeAsset(asset.id)" title="Remove from library">
+              <fiel-icon name="trash" [size]="12" />
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</section>
+
+@if (store.pageBackground(); as background) {
+  <section>
+    <header>
+      <h3>Page background</h3>
+      <button type="button" class="text-btn" (click)="store.pageBackground.set(null)">Remove</button>
+    </header>
+    <div class="background">
+      <span class="bg-thumb"><img [src]="background.src" [alt]="background.name" /></span>
+      <div class="bg-controls">
+        <span class="name">{{ background.name }}</span>
+        <label>
+          Opacity {{ (background.opacity * 100).toFixed(0) }}%
+          <input
+            type="range"
+            min="0.05"
+            max="1"
+            step="0.05"
+            [value]="background.opacity"
+            (input)="setBackgroundOpacity($event)"
+          />
+        </label>
+      </div>
+    </div>
+  </section>
+}
+
+<section>
+  <header>
+    <h3>Blocks</h3>
+  </header>
+
+  <div class="blocks">
+    @for (preset of presets; track preset.id) {
+      <div class="block" draggable="true" title="Drag onto the page" (dragstart)="startDrag($event, { kind: 'block', preset: preset.id })">
+        <span class="block-icon"><fiel-icon [name]="preset.icon" /></span>
+        <span class="text">
+          <span class="label">{{ preset.label }}</span>
+          <span class="hint">{{ preset.hint }}</span>
+        </span>
+        <button type="button" class="add" [disabled]="store.locked()" (click)="store.addText(preset.id)" title="Add to page">
+          <fiel-icon name="plus" [size]="13" />
+        </button>
+      </div>
+    }
+  </div>
+</section>
+
+<p class="tip">
+  Drop an image on a field to place it inside (the field grows), or on empty space to float it freely.
+  Upload a full-page letterhead and set it as the page background.
+</p>

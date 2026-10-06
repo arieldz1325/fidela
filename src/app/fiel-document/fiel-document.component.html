@@ -1,0 +1,97 @@
+<header class="toolbar">
+  <span>{{ cells().length }} fields</span>
+  <span class="badge warn">{{ lowConfidenceCount() }} to check</span>
+  <span class="badge ok">{{ editedCellIds().size }} edited</span>
+  <label class="toggle">
+    <input type="checkbox" [checked]="showOriginal()" (change)="showOriginal.set(!showOriginal())" />
+    Show original text
+  </label>
+</header>
+
+<div class="workspace">
+  <!-- Left: original image + highlight of the hovered field -->
+  <figure class="source">
+    <img [src]="document().image" alt="Original document" />
+    @for (highlight of highlights(); track highlight.id) {
+      <div class="highlight" [class.active]="highlight.id === hoveredCellId()" [style]="highlight.style"></div>
+    }
+  </figure>
+
+  <!-- Right: editable translation -->
+  <article class="translation">
+    @if (document().document_title; as title) {
+      <h1
+        contenteditable="plaintext-only"
+        [textContent]="title.translated"
+        (blur)="updateDocumentTitle(textOf($event))"
+      ></h1>
+    }
+
+    @for (section of document().sections; track section.id; let si = $index) {
+      <section>
+        @if (section.title; as title) {
+          <h2
+            contenteditable="plaintext-only"
+            [textContent]="title.translated"
+            (blur)="updateSectionTitle(si, textOf($event))"
+          ></h2>
+        }
+
+        @for (row of section.rows; track $index; let ri = $index) {
+          <div class="row">
+            @for (cell of row.cells; track cell.id; let ci = $index) {
+              <div
+                class="cell"
+                [class.low]="isLowConfidence(cell)"
+                [class.edited]="isEdited(cell)"
+                [class.active]="cell.id === hoveredCellId()"
+                [style.flex-basis.%]="cell.width"
+                (mouseenter)="hoveredCellId.set(cell.id)"
+                (mouseleave)="hoveredCellId.set(null)"
+              >
+                @if (cell.label; as label) {
+                  <div class="label">
+                    <span
+                      contenteditable="plaintext-only"
+                      [textContent]="label.translated"
+                      (blur)="updateCellText(si, ri, ci, 'label', textOf($event))"
+                    ></span>
+                    @if (showOriginal() && label.original) {
+                      <small>{{ label.original }}</small>
+                    }
+                  </div>
+                }
+
+                @switch (cell.kind) {
+                  @case ('checkbox') {
+                    <button type="button" class="checkbox" (click)="toggleCheckbox(si, ri, ci)">
+                      {{ cell.checked ? '☒' : '☐' }}
+                    </button>
+                  }
+                  @default {
+                    <div class="value" [class.annotation]="cell.kind === 'annotation'">
+                      <span
+                        contenteditable="plaintext-only"
+                        [textContent]="cell.value?.translated ?? ''"
+                        [attr.data-placeholder]="cell.kind === 'annotation' ? '[...]' : null"
+                        (blur)="updateCellText(si, ri, ci, 'value', textOf($event))"
+                      ></span>
+                      @if (showOriginal() && cell.value?.original) {
+                        <small>{{ cell.value?.original }}</small>
+                      }
+                    </div>
+                  }
+                }
+
+                @if (cell.note) {
+                  <p class="note">⚠ {{ cell.note }}</p>
+                }
+                <span class="confidence">{{ cell.confidence | number: '1.2-2' }}</span>
+              </div>
+            }
+          </div>
+        }
+      </section>
+    }
+  </article>
+</div>

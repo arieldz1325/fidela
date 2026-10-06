@@ -1,0 +1,114 @@
+<div class="brand">
+  <span class="logo">F</span>
+  <span class="brand-name">FIEL</span>
+  <button
+    type="button"
+    class="icon-btn"
+    [class.on]="store.leftPanelOpen()"
+    (click)="store.leftPanelOpen.set(!store.leftPanelOpen())"
+    title="Toggle left panel (⌘ \ toggles both)"
+  >
+    <fiel-icon name="panel" />
+  </button>
+</div>
+
+<div class="document">
+  <select class="doc-picker" (change)="pick($event)" aria-label="Document">
+    @for (doc of store.documents(); track doc.path; let i = $index) {
+      <option [value]="i" [selected]="doc === store.source()">
+        {{ doc.name }}{{ doc.pages > 1 ? ' · ' + doc.pages + ' pages' : '' }}
+      </option>
+    }
+  </select>
+  <span class="status" [class.approved]="store.approved()">
+    <span class="dot"></span>
+    {{ store.approved() ? 'Approved' : 'In review' }}
+  </span>
+</div>
+
+<div class="segmented" role="tablist">
+  <button type="button" [class.active]="store.mode() === 'review'" (click)="store.mode.set('review')">
+    <fiel-icon name="check" [size]="14" /> Review
+  </button>
+  <button type="button" [class.active]="store.mode() === 'preview'" (click)="store.mode.set('preview')">
+    <fiel-icon name="eye" [size]="14" /> Preview
+  </button>
+</div>
+
+<div class="progress" [title]="store.verifiedCount() + ' of ' + store.fields().length + ' fields verified'">
+  <div class="bar"><span [style.width.%]="progress()"></span></div>
+  <span class="progress-label">{{ store.verifiedCount() }}/{{ store.fields().length }} verified</span>
+  @if (store.attentionCount()) {
+    <span class="attention"><fiel-icon name="alert" [size]="13" /> {{ store.attentionCount() }} to check</span>
+  }
+</div>
+
+<div class="spacer"></div>
+
+<div class="zoom">
+  <button type="button" class="icon-btn" (click)="store.zoomBy(-0.1)" title="Zoom out (⌘ -)">
+    <fiel-icon name="zoomOut" />
+  </button>
+  <button type="button" class="zoom-value" (click)="store.zoomToFit()" title="Fit to width (⌘ 0)">
+    {{ zoomPercent() }}%
+  </button>
+  <button type="button" class="icon-btn" (click)="store.zoomBy(0.1)" title="Zoom in (⌘ +)">
+    <fiel-icon name="zoomIn" />
+  </button>
+</div>
+
+<div class="export">
+  <button type="button" class="ghost" [class.open]="exportOpen()" (click)="exportOpen.set(!exportOpen())">
+    <fiel-icon name="download" /> Export <fiel-icon name="chevronDown" [size]="14" />
+  </button>
+
+  @if (exportOpen()) {
+    <div class="menu" role="menu">
+      <button type="button" class="menu-item" role="menuitem" (click)="exportPdf()">
+        <span class="menu-icon"><fiel-icon name="printer" /></span>
+        <span>
+          <strong>PDF document</strong>
+          <small>
+            {{ store.approved() ? 'Final certified translation' : 'Draft · watermarked until approved' }}
+          </small>
+        </span>
+      </button>
+      <label class="menu-option">
+        <input type="checkbox" [checked]="store.attachOriginal()" (change)="store.attachOriginal.set(!store.attachOriginal())" />
+        Attach a copy of the original
+      </label>
+      <hr />
+      <button type="button" class="menu-item" role="menuitem" (click)="exportJson()">
+        <span class="menu-icon"><fiel-icon name="note" /></span>
+        <span>
+          <strong>JSON data</strong>
+          <small>Reviewed fields and page elements</small>
+        </span>
+      </button>
+    </div>
+  }
+</div>
+
+@if (store.approved()) {
+  <button type="button" class="secondary" (click)="store.reopen()">Reopen</button>
+} @else {
+  <button
+    type="button"
+    class="primary"
+    [disabled]="!store.allVerified()"
+    [title]="store.allVerified() ? 'Approve and lock this version' : 'Verify every field to enable approval'"
+    (click)="store.approve()"
+  >
+    <fiel-icon name="shield" /> Approve
+  </button>
+}
+
+<button
+  type="button"
+  class="icon-btn"
+  [class.on]="store.rightPanelOpen()"
+  (click)="store.rightPanelOpen.set(!store.rightPanelOpen())"
+  title="Toggle inspector (⌘ \ toggles both)"
+>
+  <fiel-icon name="panelRight" />
+</button>

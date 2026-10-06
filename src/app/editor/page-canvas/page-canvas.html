@@ -1,0 +1,121 @@
+<div
+  class="stage"
+  #stage
+  (pointerdown)="onStagePointerDown($event)"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave($event)"
+  (drop)="onDrop($event)"
+>
+  @if (!store.approved()) {
+    <div class="draft-mark" aria-hidden="true">DRAFT</div>
+  }
+
+  <div
+    class="frame"
+    [class.drop-active]="dropActive()"
+    [style.width.px]="pageWidth * store.zoom()"
+    [style.height.px]="stackHeight() * store.zoom()"
+  >
+    <div
+      class="pages"
+      #pages
+      [class.preview]="store.mode() === 'preview'"
+      [style.width.px]="pageWidth"
+      [style.transform]="'scale(' + store.zoom() + ')'"
+    >
+      @for (page of store.pages(); track page.page_number; let pi = $index) {
+        @if (store.pages().length > 1) {
+          <div class="page-label" [class.active]="pi === store.activePage()">
+            Page {{ page.page_number }} of {{ store.pages().length }}
+          </div>
+        }
+
+        <div class="page" [attr.data-page]="pi">
+          @if (store.pageBackground(); as background) {
+            <img class="page-background" [src]="background.src" [style.opacity]="background.opacity" alt="" />
+          }
+
+          @if (page.document_title) {
+            <h1 class="doc-title">{{ page.document_title.translated }}</h1>
+          }
+
+          @for (section of page.sections; track $index; let si = $index) {
+            <section class="section">
+              @if (section.title?.translated) {
+                <header class="section-title">{{ section.title?.translated }}</header>
+              }
+
+              @for (row of section.rows; track $index; let ri = $index) {
+                <div class="row">
+                  @for (cell of row.cells; track $index; let ci = $index) {
+                    @let k = key(pi, si, ri, ci);
+                    @let verified = store.isVerified(k);
+                    <div
+                      class="cell"
+                      [attr.data-key]="k"
+                      [class.annotation]="cell.kind === 'annotation'"
+                      [class.selected]="k === store.selectedKey()"
+                      [class.verified]="verified"
+                      [class.edited]="store.edited().has(k)"
+                      [class.drop-target]="k === dropTargetKey()"
+                      [style.flex-basis.%]="cell.width"
+                      (click)="store.selectField(k)"
+                    >
+                      @if (cell.label?.translated) {
+                        <div class="label">{{ cell.label?.translated }}</div>
+                      }
+                      @let image = store.cellImages().get(k);
+                      @if (image) {
+                        <div class="cell-image">
+                          <img
+                            [src]="image.src"
+                            [alt]="image.name"
+                            [class.movable]="!store.locked()"
+                            [style.height.px]="image.height"
+                            [style.object-position]="image.x + '% 50%'"
+                            [style.mix-blend-mode]="image.inkBlend ? 'multiply' : null"
+                            draggable="false"
+                            (pointerdown)="startImageDrag($event, k)"
+                            (pointermove)="dragImage($event)"
+                            (pointerup)="endImageDrag()"
+                            (pointercancel)="endImageDrag()"
+                          />
+                        </div>
+                      }
+                      @if (cell.kind === 'checkbox') {
+                        <div class="value checkbox">{{ cell.checked ? '☒' : '☐' }}</div>
+                      } @else if (!image || image.showNote) {
+                        <div class="value" [class.note-under-image]="!!image">{{ cell.value?.translated }}</div>
+                      }
+                      @if (verified) {
+                        <span class="verified-badge" aria-label="Verified">✓</span>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </section>
+          }
+
+          @for (overlay of overlaysOn(pi); track overlay.id) {
+            <fiel-overlay-item [overlay]="overlay" />
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (store.attachOriginal()) {
+    @for (page of store.pages(); track page.page_number) {
+      <div class="original-copy">
+        <p>
+          Copy of the original document
+          @if (store.pages().length > 1) {
+            · page {{ page.page_number }} of {{ store.pages().length }}
+          }
+        </p>
+        <img [src]="page.image" alt="Original document" />
+      </div>
+    }
+  }
+</div>

@@ -1,0 +1,321 @@
+:host {
+  display: block;
+  min-width: 0;
+  min-height: 0;
+  background-color: var(--canvas-bg);
+  background-image: radial-gradient(rgb(0 0 0 / 0.07) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+.stage {
+  height: 100%;
+  overflow: auto;
+  padding: 32px 40px 80px;
+}
+
+.frame {
+  position: relative;
+  margin: 0 auto;
+  border-radius: 2px;
+  transition: box-shadow 0.15s ease;
+
+  &.drop-active {
+    box-shadow: 0 0 0 3px var(--accent);
+  }
+}
+
+/* ---------- The translated pages ---------- */
+
+// All sheets live in one scaled column, so zoom is a single transform.
+.pages {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transform-origin: 0 0;
+}
+
+.page-label {
+  margin-top: 28px;
+  color: var(--text-subtle);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  &:first-child {
+    margin-top: 0;
+  }
+
+  &.active {
+    color: var(--accent);
+  }
+}
+
+// Overlays are positioned relative to their own sheet.
+.page {
+  position: relative;
+  isolation: isolate;
+  min-height: 1056px;
+  padding: 64px 64px 72px;
+  background: #fff;
+  box-shadow: var(--shadow-page);
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11.5px;
+  color: #111;
+}
+
+.doc-title {
+  margin: 0 0 20px;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.section {
+  margin-bottom: 10px;
+  border: 1px solid #2a2a2e;
+}
+
+.section-title {
+  padding: 4px 8px;
+  border-bottom: 1px solid #2a2a2e;
+  background: #f3f3f5;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.row {
+  display: flex;
+
+  & + .row {
+    border-top: 1px solid #d8d8de;
+  }
+}
+
+.cell {
+  position: relative;
+  min-width: 0;
+  padding: 5px 8px 6px;
+  border-radius: 2px;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+
+  & + .cell {
+    border-left: 1px solid #d8d8de;
+  }
+}
+
+.label {
+  margin-bottom: 2px;
+  color: #6b6b74;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.value {
+  min-height: 15px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: pre-wrap;
+  word-break: break-word;
+
+  &.checkbox {
+    font-size: 15px;
+    font-weight: 400;
+  }
+}
+
+// The <img> spans the whole cell; object-position slides the picture inside it,
+// so moving it can never push it outside the field.
+.cell-image {
+  margin: 2px 0;
+  line-height: 0;
+
+  img {
+    display: block;
+    width: 100%;
+    object-fit: contain;
+    touch-action: none;
+    user-select: none;
+
+    &.movable {
+      cursor: ew-resize;
+    }
+  }
+}
+
+.value.note-under-image {
+  min-height: 0;
+  font-size: 9.5px;
+}
+
+.cell.annotation .value {
+  color: #52525b;
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* ---------- Review chrome (hidden in preview / locked) ---------- */
+
+.pages:not(.preview) {
+  .cell {
+    cursor: pointer;
+
+    &:hover {
+      background: #f7f7fb;
+    }
+
+    &.edited {
+      background: rgb(79 70 229 / 0.04);
+    }
+
+    &.selected {
+      z-index: 1;
+      background: var(--accent-soft);
+      box-shadow: 0 0 0 2px var(--accent);
+    }
+
+    &.drop-target {
+      z-index: 1;
+      background: rgb(79 70 229 / 0.1);
+      box-shadow: 0 0 0 2px var(--accent), 0 0 0 6px rgb(79 70 229 / 0.18);
+    }
+  }
+
+  .verified-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: grid;
+    place-items: center;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: var(--ok);
+    color: #fff;
+    font-size: 8px;
+    font-weight: 700;
+    animation: pop 0.25s ease;
+  }
+}
+
+.pages.preview .verified-badge {
+  display: none;
+}
+
+/* ---------- Page background, draft mark, attached original ---------- */
+
+// Covers the first Letter page; z-index -1 keeps it behind the content inside the isolated page.
+.page-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  width: 816px;
+  height: 1056px;
+  object-fit: fill;
+  pointer-events: none;
+}
+
+.draft-mark,
+.original-copy {
+  display: none;
+}
+
+@media print {
+  :host {
+    background: none;
+  }
+
+  .stage {
+    height: auto;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .frame {
+    width: auto !important;
+    height: auto !important;
+    margin: 0;
+    box-shadow: none !important;
+  }
+
+  .pages {
+    position: static;
+    display: block;
+    transform: none !important;
+  }
+
+  .page-label {
+    display: none;
+  }
+
+  // One translated page per printed sheet.
+  .page {
+    box-shadow: none;
+
+    &:not(:last-child) {
+      break-after: page;
+    }
+  }
+
+  .page .cell {
+    background: none !important;
+    box-shadow: none !important;
+  }
+
+  .verified-badge {
+    display: none !important;
+  }
+
+  .draft-mark {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    z-index: 5;
+    display: block;
+    color: rgb(220 38 38 / 0.12);
+    font-size: 150px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    pointer-events: none;
+  }
+
+  .original-copy {
+    display: block;
+    break-before: page;
+    padding: 48px 56px;
+    text-align: center;
+
+    p {
+      margin: 0 0 16px;
+      color: #52525b;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    img {
+      max-width: 100%;
+      max-height: 880px;
+      object-fit: contain;
+    }
+  }
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+}
