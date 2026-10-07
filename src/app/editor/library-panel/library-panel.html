@@ -8,10 +8,10 @@
       (click)="store.startCrop({ target: 'library' })"
       title="Cut an area out of the original document"
     >
-      <fiel-icon name="crop" [size]="14" /> Crop
+      <fidela-icon name="crop" [size]="14" /> Crop
     </button>
     <label class="upload" title="Upload seal, signature, logo, letterhead or image">
-      <fiel-icon name="upload" [size]="14" /> Upload
+      <fidela-icon name="upload" [size]="14" /> Upload
       <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" multiple (change)="upload($event)" />
     </label>
   </header>
@@ -29,7 +29,7 @@
 
         <div class="actions">
           <button type="button" class="add" [disabled]="store.locked()" (click)="store.addImage(asset)" title="Add to page">
-            <fiel-icon name="plus" [size]="12" /> Add
+            <fidela-icon name="plus" [size]="12" /> Add
           </button>
           <button
             type="button"
@@ -37,11 +37,11 @@
             (click)="store.setPageBackground(asset)"
             title="Use as page background (letterhead)"
           >
-            <fiel-icon name="letterhead" [size]="12" />
+            <fidela-icon name="letterhead" [size]="12" />
           </button>
           @if (!asset.builtIn) {
             <button type="button" class="danger" (click)="store.removeAsset(asset.id)" title="Remove from library">
-              <fiel-icon name="trash" [size]="12" />
+              <fidela-icon name="trash" [size]="12" />
             </button>
           }
         </div>
@@ -84,13 +84,13 @@
   <div class="blocks">
     @for (preset of presets; track preset.id) {
       <div class="block" draggable="true" title="Drag onto the page" (dragstart)="startDrag($event, { kind: 'block', preset: preset.id })">
-        <span class="block-icon"><fiel-icon [name]="preset.icon" /></span>
+        <span class="block-icon"><fidela-icon [name]="preset.icon" /></span>
         <span class="text">
           <span class="label">{{ preset.label }}</span>
           <span class="hint">{{ preset.hint }}</span>
         </span>
         <button type="button" class="add" [disabled]="store.locked()" (click)="store.addText(preset.id)" title="Add to page">
-          <fiel-icon name="plus" [size]="13" />
+          <fidela-icon name="plus" [size]="13" />
         </button>
       </div>
     }

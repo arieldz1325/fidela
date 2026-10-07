@@ -1,0 +1,283 @@
+<fidela-site-header />
+
+<main>
+  <!-- ============ Hero + upload ============ -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="pitch">
+        <span class="eyebrow"><span class="dot"></span> Certified translations · Canada</span>
+        <h1>Certified translations for your new life in Canada.</h1>
+        <p class="lead">
+          Upload your documents in any language. A certified translator prepares an official
+          English or French translation, ready for immigration, licensing and school applications.
+        </p>
+
+        <ul class="trust">
+          <li><span class="check"><fidela-icon name="check" [size]="14" /></span> Signed and sealed by a certified translator</li>
+          <li><span class="check"><fidela-icon name="check" [size]="14" /></span> For IRCC, WES, DriveTest, schools and employers</li>
+          <li><span class="check"><fidela-icon name="check" [size]="14" /></span> Private storage — only your translator sees your files</li>
+        </ul>
+
+        <div class="formats">
+          <span>We accept</span>
+          @for (format of ['PDF', 'JPG', 'PNG', 'HEIC', 'TIFF']; track format) {
+            <span class="chip">{{ format }}</span>
+          }
+        </div>
+      </div>
+
+      <!-- Upload card -->
+      <div class="card" id="upload">
+        @if (result(); as done) {
+          <div class="success">
+            <div class="success-icon"><fidela-icon name="check" [size]="28" /></div>
+            <h2>We received your documents</h2>
+            <p>
+              {{ done.files }} {{ done.files === 1 ? 'file is' : 'files are' }} now with our team.
+              We’ll contact you at <strong>{{ email() }}</strong> about your order.
+            </p>
+
+            <div class="reference">
+              <span class="reference-label">Your order reference</span>
+              <div class="reference-row">
+                <code>{{ done.reference }}</code>
+                <button type="button" class="copy" (click)="copyReference(done.reference)">
+                  <fidela-icon [name]="copied() ? 'check' : 'copy'" [size]="15" /> {{ copied() ? 'Copied' : 'Copy' }}
+                </button>
+              </div>
+              <span class="reference-hint">Keep it to check the status of your order at any time.</span>
+            </div>
+
+            <div class="success-actions">
+              <a class="button primary" routerLink="/track" [queryParams]="{ reference: done.reference, email: email() }">
+                Track this order <fidela-icon name="arrowRight" [size]="16" />
+              </a>
+              <button type="button" class="button ghost" (click)="startOver()">Send more documents</button>
+            </div>
+          </div>
+        } @else {
+          <form (submit)="submit($event)" novalidate>
+            <div class="card-head">
+              <h2>Start your translation</h2>
+              <p>Takes about a minute. No account needed.</p>
+            </div>
+
+            <!-- Step 1: files -->
+            <label
+              class="dropzone"
+              [class.dragging]="dragging()"
+              [class.invalid]="submitted() && !files().length"
+              (dragenter)="onDragEnter($event)"
+              (dragover)="onDragOver($event)"
+              (dragleave)="onDragLeave()"
+              (drop)="onDrop($event)"
+            >
+              <input type="file" multiple [accept]="accept" (change)="onPick($event)" [disabled]="uploading()" />
+              <span class="drop-icon"><fidela-icon name="uploadCloud" [size]="26" /></span>
+              <span class="drop-title">
+                @if (dragging()) {
+                  Drop your files here
+                } @else {
+                  <strong>Choose files</strong> or drag them here
+                }
+              </span>
+              <span class="drop-hint">PDF or photos · up to {{ maxFiles }} files · {{ maxFileMb }} MB each</span>
+            </label>
+
+            @if (rejected().length) {
+              <ul class="rejected">
+                @for (message of rejected(); track message) {
+                  <li><fidela-icon name="alert" [size]="13" /> {{ message }}</li>
+                }
+              </ul>
+            }
+
+            @if (files().length) {
+              <ul class="file-list">
+                @for (item of files(); track item.id) {
+                  <li>
+                    <span class="thumb" [class.pdf]="item.kind === 'pdf'">
+                      @if (item.previewUrl) {
+                        <img [src]="item.previewUrl" alt="" />
+                      } @else {
+                        <fidela-icon [name]="item.kind === 'pdf' ? 'file' : 'image'" [size]="18" />
+                        @if (item.kind === 'pdf') {
+                          <span class="badge">PDF</span>
+                        }
+                      }
+                    </span>
+                    <span class="file-text">
+                      <span class="file-name">{{ item.file.name }}</span>
+                      <span class="file-size">{{ formatSize(item.file.size) }}</span>
+                    </span>
+                    <button type="button" class="remove" (click)="remove(item.id)" [disabled]="uploading()" [attr.aria-label]="'Remove ' + item.file.name">
+                      <fidela-icon name="x" [size]="15" />
+                    </button>
+                  </li>
+                }
+              </ul>
+              <p class="file-summary">{{ files().length }} {{ files().length === 1 ? 'file' : 'files' }} · {{ formatSize(totalSize()) }}</p>
+            }
+
+            <!-- Step 2: details -->
+            <div class="grid">
+              <label class="field">
+                <span>Full name</span>
+                <input
+                  type="text"
+                  autocomplete="name"
+                  placeholder="As it appears on your documents"
+                  [value]="name()"
+                  (input)="name.set(value($event))"
+                  [class.invalid]="submitted() && !nameValid()"
+                />
+              </label>
+              <label class="field">
+                <span>Email</span>
+                <input
+                  type="email"
+                  autocomplete="email"
+                  placeholder="you@example.com"
+                  [value]="email()"
+                  (input)="email.set(value($event))"
+                  [class.invalid]="submitted() && !emailValid()"
+                />
+              </label>
+              <label class="field">
+                <span>Document language</span>
+                <select (change)="sourceLanguage.set(value($event))">
+                  @for (language of sourceLanguages; track language) {
+                    <option [value]="language" [selected]="language === sourceLanguage()">{{ language }}</option>
+                  }
+                </select>
+              </label>
+              <label class="field">
+                <span>Translate into</span>
+                <select (change)="targetLanguage.set(value($event))">
+                  @for (language of targetLanguages; track language) {
+                    <option [value]="language" [selected]="language === targetLanguage()">{{ language }}</option>
+                  }
+                </select>
+              </label>
+              <label class="field wide">
+                <span>Notes for the translator <em>(optional)</em></span>
+                <textarea
+                  rows="2"
+                  placeholder="e.g. Needed for my IRCC work permit application"
+                  [value]="notes()"
+                  (input)="notes.set(value($event))"
+                ></textarea>
+              </label>
+            </div>
+
+            <label class="consent" [class.invalid]="submitted() && !consent()">
+              <input type="checkbox" [checked]="consent()" (change)="consent.set(!consent())" />
+              <span>I confirm these are my documents (or I’m authorized to send them) and I agree to their processing for translation.</span>
+            </label>
+
+            @if (submitted() && !canSubmit() && !uploading()) {
+              <p class="form-error">
+                <fidela-icon name="alert" [size]="14" />
+                @if (!files().length) {
+                  Add at least one file.
+                } @else if (!nameValid()) {
+                  Enter your full name.
+                } @else if (!emailValid()) {
+                  Enter a valid email so we can send you the translation.
+                } @else {
+                  Please confirm the authorization checkbox.
+                }
+              </p>
+            }
+
+            @if (error(); as message) {
+              <p class="form-error"><fidela-icon name="alert" [size]="14" /> {{ message }}</p>
+            }
+
+            <button type="submit" class="submit" [disabled]="uploading()">
+              @if (uploading()) {
+                <span class="progress-fill" [style.width.%]="progress()"></span>
+                <span class="submit-label">Uploading… {{ progress() }}%</span>
+              } @else {
+                <span class="submit-label"><fidela-icon name="lock" [size]="16" /> Send securely for translation</span>
+              }
+            </button>
+          </form>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ How it works ============ -->
+  <section class="section" id="how">
+    <div class="section-inner">
+      <span class="kicker">How it works</span>
+      <h2>Three simple steps</h2>
+      <div class="steps">
+        <article>
+          <span class="step-number">1</span>
+          <h3>Upload your documents</h3>
+          <p>Send a PDF or clear photos from your phone. Several documents can go in one order.</p>
+        </article>
+        <article>
+          <span class="step-number">2</span>
+          <h3>A certified translator works on it</h3>
+          <p>Your translation is prepared, checked line by line against the original, and certified.</p>
+        </article>
+        <article>
+          <span class="step-number">3</span>
+          <h3>Receive your certified PDF</h3>
+          <p>Signed and sealed, with a copy of the original attached — ready to submit.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Documents ============ -->
+  <section class="section muted" id="documents">
+    <div class="section-inner">
+      <span class="kicker">Documents</span>
+      <h2>What we translate most often</h2>
+      <div class="documents">
+        @for (doc of [
+          'Birth certificates', 'Passports', "Driver's licences", 'Marriage certificates',
+          'Diplomas & transcripts', 'Police certificates', 'Identity cards', 'Work permits & visas'
+        ]; track doc) {
+          <div class="doc"><fidela-icon name="file" [size]="18" /> {{ doc }}</div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FAQ ============ -->
+  <section class="section">
+    <div class="section-inner narrow">
+      <span class="kicker">Questions</span>
+      <h2>Good to know</h2>
+      <details>
+        <summary>Who translates my documents?</summary>
+        <p>A certified translator. Every translation is reviewed and certified by a person before it’s delivered.</p>
+      </details>
+      <details>
+        <summary>My document has several pages or files. Is that OK?</summary>
+        <p>Yes. Upload everything in one order — a multi-page PDF, several photos, or both.</p>
+      </details>
+      <details>
+        <summary>What if my photo isn’t perfect?</summary>
+        <p>Phone photos are fine if the whole page is visible and the text is readable. Avoid glare and cut-off edges.</p>
+      </details>
+      <details>
+        <summary>How is my information protected?</summary>
+        <p>Files are stored privately and are only available to the translator assigned to your order.</p>
+      </details>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <span class="footer-brand"><span class="mark">F</span> Fidela Translations</span>
+    <span>Certified translations for newcomers to Canada</span>
+    <a routerLink="/login">Translator sign in</a>
+  </div>
+</footer>

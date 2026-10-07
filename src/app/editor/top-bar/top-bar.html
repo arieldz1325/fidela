@@ -1,6 +1,11 @@
 <div class="brand">
+  @if (store.remoteId()) {
+    <button type="button" class="icon-btn" (click)="backRequested.emit()" title="Back to dashboard">
+      <fidela-icon name="arrowLeft" />
+    </button>
+  }
   <span class="logo">F</span>
-  <span class="brand-name">FIEL</span>
+  <span class="brand-name">Fidela</span>
   <button
     type="button"
     class="icon-btn"
@@ -8,11 +13,17 @@
     (click)="store.leftPanelOpen.set(!store.leftPanelOpen())"
     title="Toggle left panel (⌘ \ toggles both)"
   >
-    <fiel-icon name="panel" />
+    <fidela-icon name="panel" />
   </button>
 </div>
 
 <div class="document">
+  @if (store.remoteId()) {
+    <span class="doc-name">
+      <code>{{ store.source()?.name }}</code>
+      <small>{{ store.pages().length }} {{ store.pages().length === 1 ? 'page' : 'pages' }}</small>
+    </span>
+  } @else {
   <select class="doc-picker" (change)="pick($event)" aria-label="Document">
     @for (doc of store.documents(); track doc.path; let i = $index) {
       <option [value]="i" [selected]="doc === store.source()">
@@ -20,6 +31,7 @@
       </option>
     }
   </select>
+  }
   <span class="status" [class.approved]="store.approved()">
     <span class="dot"></span>
     {{ store.approved() ? 'Approved' : 'In review' }}
@@ -28,10 +40,10 @@
 
 <div class="segmented" role="tablist">
   <button type="button" [class.active]="store.mode() === 'review'" (click)="store.mode.set('review')">
-    <fiel-icon name="check" [size]="14" /> Review
+    <fidela-icon name="check" [size]="14" /> Review
   </button>
   <button type="button" [class.active]="store.mode() === 'preview'" (click)="store.mode.set('preview')">
-    <fiel-icon name="eye" [size]="14" /> Preview
+    <fidela-icon name="eye" [size]="14" /> Preview
   </button>
 </div>
 
@@ -39,7 +51,7 @@
   <div class="bar"><span [style.width.%]="progress()"></span></div>
   <span class="progress-label">{{ store.verifiedCount() }}/{{ store.fields().length }} verified</span>
   @if (store.attentionCount()) {
-    <span class="attention"><fiel-icon name="alert" [size]="13" /> {{ store.attentionCount() }} to check</span>
+    <span class="attention"><fidela-icon name="alert" [size]="13" /> {{ store.attentionCount() }} to check</span>
   }
 </div>
 
@@ -47,25 +59,39 @@
 
 <div class="zoom">
   <button type="button" class="icon-btn" (click)="store.zoomBy(-0.1)" title="Zoom out (⌘ -)">
-    <fiel-icon name="zoomOut" />
+    <fidela-icon name="zoomOut" />
   </button>
   <button type="button" class="zoom-value" (click)="store.zoomToFit()" title="Fit to width (⌘ 0)">
     {{ zoomPercent() }}%
   </button>
   <button type="button" class="icon-btn" (click)="store.zoomBy(0.1)" title="Zoom in (⌘ +)">
-    <fiel-icon name="zoomIn" />
+    <fidela-icon name="zoomIn" />
   </button>
 </div>
 
+@if (store.remoteId() && !store.approved()) {
+  <button
+    type="button"
+    class="ghost save"
+    [class.dirty]="store.dirty()"
+    [disabled]="saving() || !store.dirty()"
+    (click)="saveRequested.emit()"
+    title="Save (⌘ S)"
+  >
+    <fidela-icon name="save" />
+    {{ saving() ? 'Saving…' : store.dirty() ? 'Save' : 'Saved' }}
+  </button>
+}
+
 <div class="export">
   <button type="button" class="ghost" [class.open]="exportOpen()" (click)="exportOpen.set(!exportOpen())">
-    <fiel-icon name="download" /> Export <fiel-icon name="chevronDown" [size]="14" />
+    <fidela-icon name="download" /> Export <fidela-icon name="chevronDown" [size]="14" />
   </button>
 
   @if (exportOpen()) {
     <div class="menu" role="menu">
       <button type="button" class="menu-item" role="menuitem" (click)="exportPdf()">
-        <span class="menu-icon"><fiel-icon name="printer" /></span>
+        <span class="menu-icon"><fidela-icon name="printer" /></span>
         <span>
           <strong>PDF document</strong>
           <small>
@@ -79,7 +105,7 @@
       </label>
       <hr />
       <button type="button" class="menu-item" role="menuitem" (click)="exportJson()">
-        <span class="menu-icon"><fiel-icon name="note" /></span>
+        <span class="menu-icon"><fidela-icon name="note" /></span>
         <span>
           <strong>JSON data</strong>
           <small>Reviewed fields and page elements</small>
@@ -90,16 +116,16 @@
 </div>
 
 @if (store.approved()) {
-  <button type="button" class="secondary" (click)="store.reopen()">Reopen</button>
+  <button type="button" class="secondary" (click)="reopenRequested.emit()">Reopen</button>
 } @else {
   <button
     type="button"
     class="primary"
-    [disabled]="!store.allVerified()"
     [title]="store.allVerified() ? 'Approve and lock this version' : 'Verify every field to enable approval'"
-    (click)="store.approve()"
+    [disabled]="!store.allVerified() || saving()"
+    (click)="approveRequested.emit()"
   >
-    <fiel-icon name="shield" /> Approve
+    <fidela-icon name="shield" /> Approve
   </button>
 }
 
@@ -110,5 +136,5 @@
   (click)="store.rightPanelOpen.set(!store.rightPanelOpen())"
   title="Toggle inspector (⌘ \ toggles both)"
 >
-  <fiel-icon name="panelRight" />
+  <fidela-icon name="panelRight" />
 </button>

@@ -1,14 +1,21 @@
-<fiel-top-bar (openDocument)="open($event)" />
+<fiel-top-bar
+  [saving]="saving()"
+  (openDocument)="open($event)"
+  (saveRequested)="save()"
+  (approveRequested)="approve()"
+  (reopenRequested)="reopen()"
+  (backRequested)="backToDashboard()"
+/>
 
 <div class="body" [style.grid-template-columns]="bodyColumns()">
   <aside class="left" [class.collapsed]="!store.leftPanelOpen()" [inert]="!store.leftPanelOpen()">
     <div class="panel-inner">
       <nav class="tabs">
         <button type="button" [class.active]="leftTab() === 'fields'" (click)="leftTab.set('fields')">
-          <fiel-icon name="list" [size]="14" /> Fields
+          <fidela-icon name="list" [size]="14" /> Fields
         </button>
         <button type="button" [class.active]="leftTab() === 'library'" (click)="leftTab.set('library')">
-          <fiel-icon name="grid" [size]="14" /> Library
+          <fidela-icon name="grid" [size]="14" /> Library
         </button>
       </nav>
       @if (leftTab() === 'fields') {
@@ -34,7 +41,7 @@
       ></div>
     } @else {
       <button type="button" class="show-source" (click)="showSource.set(true)">
-        <fiel-icon name="panel" [size]="14" /> Show original
+        <fidela-icon name="panel" [size]="14" /> Show original
       </button>
     }
     <fiel-page-canvas />
@@ -53,6 +60,6 @@
 
 @if (store.toast(); as message) {
   <div class="toast" role="status">
-    <fiel-icon name="check" [size]="14" /> {{ message }}
+    <fidela-icon name="check" [size]="14" /> {{ message }}
   </div>
 }

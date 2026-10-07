@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ASSET_DRAG_TYPE, DRAG_TYPE, LibraryDragItem, TEXT_PRESETS, TextPreset } from '../editor.models';
 import { EditorStore } from '../editor.store';
-import { Icon } from '../ui/icon';
+import { Icon } from '../../shared/icon';
 
 @Component({
   selector: 'fiel-library-panel',

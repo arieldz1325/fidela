@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { FielDocumentEntry } from '../../fiel-document/fiel-document.model';
 import { EditorStore } from '../editor.store';
-import { Icon } from '../ui/icon';
+import { Icon } from '../../shared/icon';
 
 @Component({
   selector: 'fiel-top-bar',
@@ -13,6 +13,11 @@ import { Icon } from '../ui/icon';
 })
 export class TopBar {
   readonly openDocument = output<FielDocumentEntry>();
+  readonly saveRequested = output<void>();
+  readonly approveRequested = output<void>();
+  readonly reopenRequested = output<void>();
+  readonly backRequested = output<void>();
+  readonly saving = input(false);
 
   protected readonly store = inject(EditorStore);
   protected readonly exportOpen = signal(false);

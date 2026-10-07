@@ -26,9 +26,9 @@
       >
         <span class="status" [class.verified]="verified" [class.attention]="!verified && field.issues.length">
           @if (verified) {
-            <fiel-icon name="check" [size]="11" />
+            <fidela-icon name="check" [size]="11" />
           } @else if (field.issues.length) {
-            <fiel-icon name="alert" [size]="11" />
+            <fidela-icon name="alert" [size]="11" />
           }
         </span>
         <span class="text">
@@ -42,7 +42,7 @@
     }
   } @empty {
     <div class="empty">
-      <fiel-icon name="check" [size]="20" />
+      <fidela-icon name="check" [size]="20" />
       <p>Nothing here</p>
     </div>
   }

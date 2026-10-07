@@ -1,4 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
+import { SavedReview } from '../core/api.models';
 import { FielCell, FielDocument, FielDocumentEntry, FielText } from '../fiel-document/fiel-document.model';
 import {
   Asset, CellImage, CropRequest, EditorMode, FieldRef, Overlay, OverlayPatch, PAGE_WIDTH,
@@ -31,6 +32,8 @@ export class EditorStore {
   readonly toast = signal<string | null>(null);
 
   readonly pageBackground = signal<PageBackground | null>(null);
+  /** Set when the document comes from the API (saving and approval go to the server). */
+  readonly remoteId = signal<string | null>(null);
   readonly attachOriginal = signal(true);
   readonly leftPanelOpen = signal(true);
   readonly rightPanelOpen = signal(true);
@@ -79,9 +82,23 @@ export class EditorStore {
     return selection?.type === 'overlay' ? this.overlays().find(o => o.id === selection.id) ?? null : null;
   });
 
+  /**
+   * Every editable piece of state is replaced (never mutated) on change, so comparing references
+   * against the last saved snapshot tells whether there are unsaved changes, at no cost.
+   */
+  private readonly savedSnapshot = signal<readonly unknown[]>([]);
+  private readonly currentSnapshot = computed(() => [
+    this.document(), this.verified(), this.edited(), this.overlays(), this.cellImages(), this.pageBackground(),
+  ]);
+  readonly dirty = computed(() => {
+    const saved = this.savedSnapshot();
+    return this.currentSnapshot().some((part, i) => part !== saved[i]);
+  });
+
   private toastTimer?: ReturnType<typeof setTimeout>;
 
-  load(source: FielDocumentEntry, doc: FielDocument): void {
+  load(source: FielDocumentEntry, doc: FielDocument, remoteId: string | null = null): void {
+    this.remoteId.set(remoteId);
     this.source.set(source);
     this.document.set(doc);
     this.activePage.set(0);
@@ -94,6 +111,39 @@ export class EditorStore {
     this.approved.set(false);
     this.mode.set('review');
     this.manualZoom.set(null);
+    this.markSaved();
+  }
+
+  /** Puts back what a translator saved earlier: verified fields, page elements, images... */
+  restoreReview(review: SavedReview, approved: boolean): void {
+    this.verified.set(new Set(review.verified ?? []));
+    this.edited.set(new Set(review.edited ?? []));
+    this.overlays.set(((review.overlays ?? []) as Overlay[]).map(o => ({ ...o, page: o.page ?? 0 })));
+    this.cellImages.set(new Map(Object.entries((review.cellImages ?? {}) as Record<string, CellImage>)));
+    if (review.pageBackground) this.pageBackground.set(review.pageBackground as PageBackground);
+    this.approved.set(approved);
+    this.markSaved();
+  }
+
+  markSaved(): void {
+    this.savedSnapshot.set(this.currentSnapshot());
+  }
+
+  /** Corrected document + review state, as saved to the API or exported as JSON. */
+  reviewPayload(): { document: FielDocument; review: SavedReview } | null {
+    const doc = this.document();
+    if (!doc) return null;
+    return {
+      document: doc,
+      review: {
+        approved: this.approved(),
+        verified: [...this.verified()],
+        edited: [...this.edited()],
+        overlays: this.overlays(),
+        cellImages: Object.fromEntries(this.cellImages()),
+        pageBackground: this.pageBackground(),
+      },
+    };
   }
 
   // ---------- Selection & review flow ----------
@@ -393,21 +443,10 @@ export class EditorStore {
   }
 
   exportJson(): void {
-    const doc = this.document();
+    const payload = this.reviewPayload();
     const source = this.source();
-    if (!doc || !source) return;
+    if (!payload || !source) return;
 
-    const payload = {
-      document: doc,
-      review: {
-        approved: this.approved(),
-        verified: [...this.verified()],
-        edited: [...this.edited()],
-        overlays: this.overlays(),
-        cellImages: Object.fromEntries(this.cellImages()),
-        pageBackground: this.pageBackground(),
-      },
-    };
     const name = this.baseName(source) + '.fiel.reviewed.json';
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
@@ -416,9 +455,9 @@ export class EditorStore {
     URL.revokeObjectURL(link.href);
   }
 
-  /** The document's folder name, e.g. ".../demo/eucaris-documents/document.json" -> "eucaris-documents". */
+  /** File-name friendly document name, e.g. "FD-7KQ2MX" or "eucaris-documents". */
   private baseName(source: FielDocumentEntry): string {
-    return source.path.split('/').at(-2) ?? 'document';
+    return source.name.replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '') || 'document';
   }
 
   notify(message: string): void {

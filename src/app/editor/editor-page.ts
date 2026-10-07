@@ -1,4 +1,7 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, OnInit, computed, effect, inject, input, signal, viewChild } from '@angular/core';
+import { Router } from '@angular/router';
+import { apiErrorMessage } from '../core/api.models';
+import { DocumentsApi } from '../core/documents.api';
 import { loadDocumentIndex, loadFielDocument } from '../fiel-document/fiel-document.loader';
 import { FielDocumentEntry } from '../fiel-document/fiel-document.model';
 import { DOCUMENT_INDEX } from './editor.models';
@@ -9,7 +12,7 @@ import { LibraryPanel } from './library-panel/library-panel';
 import { PageCanvas } from './page-canvas/page-canvas';
 import { SourceView } from './source-view/source-view';
 import { TopBar } from './top-bar/top-bar';
-import { Icon } from './ui/icon';
+import { Icon } from '../shared/icon';
 
 type LeftTab = 'fields' | 'library';
 
@@ -25,10 +28,19 @@ const MIN_CANVAS_WIDTH = 320;
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './editor-page.html',
   styleUrl: './editor-page.scss',
-  host: { '(document:keydown)': 'onKeydown($event)' },
+  host: {
+    '(document:keydown)': 'onKeydown($event)',
+    '(window:beforeunload)': 'warnUnsaved($event)',
+  },
 })
-export class EditorPage {
+export class EditorPage implements OnInit {
+  /** Route parameter: a document from the API. Without it the editor opens the local demo documents. */
+  readonly id = input<string>();
+
   protected readonly store = inject(EditorStore);
+  private readonly api = inject(DocumentsApi);
+  private readonly router = inject(Router);
+  protected readonly saving = signal(false);
   protected readonly leftTab = signal<LeftTab>('fields');
   protected readonly showSource = signal(true);
   protected readonly loadError = signal<string | null>(null);
@@ -48,9 +60,13 @@ export class EditorPage {
     return `${width ? `${width}px` : 'minmax(300px, 38%)'} 6px minmax(0, 1fr)`;
   });
 
-  constructor() {
-    this.loadIndex();
+  ngOnInit(): void {
+    const id = this.id();
+    if (id) this.loadRemote(id);
+    else this.loadIndex();
+  }
 
+  constructor() {
     // Cropping happens in the original viewer, so make sure it is visible.
     effect(() => {
       if (this.store.cropRequest()) this.showSource.set(true);
@@ -66,6 +82,80 @@ export class EditorPage {
     } catch (error) {
       this.loadError.set(error instanceof Error ? error.message : String(error));
     }
+  }
+
+  private async loadRemote(id: string): Promise<void> {
+    try {
+      const draft = await this.api.draft(id);
+      const entry: FielDocumentEntry = { name: draft.reference, path: id, pages: draft.document.pages.length };
+      this.store.load(entry, draft.document, id);
+      if (draft.review) this.store.restoreReview(draft.review, draft.status === 'approved');
+      else if (draft.status === 'approved') this.store.approved.set(true);
+      this.loadError.set(null);
+    } catch (error) {
+      this.loadError.set(apiErrorMessage(error, 'Could not open this document.'));
+    }
+  }
+
+  // ---------- Saving & approval (API documents) ----------
+
+  protected async save(): Promise<void> {
+    const id = this.store.remoteId();
+    const payload = this.store.reviewPayload();
+    if (!id || !payload || this.saving() || this.store.approved()) return;
+
+    this.saving.set(true);
+    try {
+      const version = await this.api.saveReview(id, payload);
+      this.store.markSaved();
+      this.store.notify(`Saved · version ${version.version}`);
+    } catch (error) {
+      this.store.notify(apiErrorMessage(error, 'Could not save. Your changes are still here.'));
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  protected async approve(): Promise<void> {
+    const id = this.store.remoteId();
+    if (!id) {
+      this.store.approve();
+      return;
+    }
+    const payload = this.store.reviewPayload();
+    if (!payload || !this.store.allVerified()) {
+      this.store.approve(); // shows "verify every field" message
+      return;
+    }
+    this.saving.set(true);
+    try {
+      await this.api.approve(id, payload);
+      this.store.approve();
+      this.store.markSaved();
+    } catch (error) {
+      this.store.notify(apiErrorMessage(error, 'Could not approve the document.'));
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  protected async reopen(): Promise<void> {
+    const id = this.store.remoteId();
+    try {
+      if (id) await this.api.reopen(id);
+      this.store.reopen();
+    } catch (error) {
+      this.store.notify(apiErrorMessage(error, 'Could not reopen the document.'));
+    }
+  }
+
+  protected backToDashboard(): void {
+    if (this.store.dirty() && !confirm('You have unsaved changes. Leave without saving?')) return;
+    this.router.navigateByUrl('/dashboard');
+  }
+
+  protected warnUnsaved(event: BeforeUnloadEvent): void {
+    if (this.store.remoteId() && this.store.dirty()) event.preventDefault();
   }
 
   protected async open(entry: FielDocumentEntry): Promise<void> {
@@ -103,6 +193,7 @@ export class EditorPage {
     const mod = event.metaKey || event.ctrlKey;
 
     if (mod && event.key === '\\') return this.handled(event, () => this.store.togglePanels());
+    if (mod && event.key.toLowerCase() === 's') return this.handled(event, () => this.save());
 
     if (mod && (event.key === '=' || event.key === '+')) return this.handled(event, () => this.store.zoomBy(0.1));
     if (mod && event.key === '-') return this.handled(event, () => this.store.zoomBy(-0.1));

@@ -1,0 +1,79 @@
+<fidela-site-header />
+
+<main>
+  <div class="inner">
+    <span class="kicker">Order status</span>
+    <h1>Track your translation</h1>
+    <p class="lead">Use the reference you received after uploading (it starts with <code>FD-</code>).</p>
+
+    <form class="lookup" (submit)="lookup($event)" novalidate>
+      <label>
+        <span>Order reference</span>
+        <input type="text" placeholder="FD-XXXXXX" [value]="referenceValue()" (input)="referenceValue.set(value($event))" />
+      </label>
+      <label>
+        <span>Email used for the order</span>
+        <input type="email" placeholder="you@example.com" [value]="emailValue()" (input)="emailValue.set(value($event))" />
+      </label>
+      <button type="submit" [disabled]="busy()">
+        <fidela-icon name="search" [size]="16" /> {{ busy() ? 'Searching…' : 'Check status' }}
+      </button>
+    </form>
+
+    @if (error(); as message) {
+      <p class="error"><fidela-icon name="alert" [size]="14" /> {{ message }}</p>
+    }
+
+    @if (order(); as current) {
+      @let active = stepIndex(current.status);
+      <section class="status-card">
+        <header>
+          <div>
+            <span class="muted">Order</span>
+            <code>{{ current.reference }}</code>
+          </div>
+          <span class="status" [attr.data-status]="current.status">{{ labels[current.status] }}</span>
+        </header>
+
+        <ol class="timeline">
+          @for (step of steps; track step.label; let i = $index) {
+            <li [class.done]="i < active || current.status === 'approved'" [class.current]="i === active && current.status !== 'approved'">
+              <span class="bullet">
+                @if (i < active || current.status === 'approved') {
+                  <fidela-icon name="check" [size]="13" />
+                }
+              </span>
+              {{ step.label }}
+            </li>
+          }
+        </ol>
+
+        <p class="meta">
+          Received {{ current.created_at | date: 'MMM d, y, h:mm a' }}
+          @if (current.page_count) {
+            · {{ current.page_count }} {{ current.page_count === 1 ? 'page' : 'pages' }}
+          }
+          · Updated {{ current.updated_at | date: 'MMM d, h:mm a' }}
+        </p>
+        @if (current.status === 'failed') {
+          <p class="hint">We need to take a closer look at your files. Our team will contact you by email.</p>
+        }
+      </section>
+    }
+
+    @if (myOrders(); as orders) {
+      <section class="mine">
+        <h2>My orders</h2>
+        @for (o of orders; track o.reference) {
+          <button type="button" class="order-row" (click)="order.set(o)">
+            <code>{{ o.reference }}</code>
+            <span class="muted">{{ o.created_at | date: 'MMM d, y' }}</span>
+            <span class="status" [attr.data-status]="o.status">{{ labels[o.status] }}</span>
+          </button>
+        } @empty {
+          <p class="muted">No orders yet. <a routerLink="/">Upload your documents</a> to start.</p>
+        }
+      </section>
+    }
+  </div>
+</main>

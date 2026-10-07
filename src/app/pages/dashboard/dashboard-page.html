@@ -1,0 +1,233 @@
+<header class="app-header">
+  <a routerLink="/" class="brand"><span class="mark">F</span> Fidela</a>
+
+  <nav class="tabs">
+    <button type="button" [class.active]="tab() === 'documents'" (click)="tab.set('documents')">
+      <fidela-icon name="inbox" [size]="16" /> Documents
+    </button>
+    @if (isManager()) {
+      <button type="button" [class.active]="tab() === 'team'" (click)="showTeam()">
+        <fidela-icon name="users" [size]="16" /> Team
+      </button>
+    }
+  </nav>
+
+  @if (auth.user(); as user) {
+    <div class="user">
+      <span class="avatar">{{ initials(user.full_name) }}</span>
+      <span class="user-text">
+        <strong>{{ user.full_name }}</strong>
+        <small>{{ user.role === 'manager' ? 'Manager' : 'Certified translator' }}</small>
+      </span>
+      <button type="button" class="icon-button" (click)="auth.logout()" title="Sign out">
+        <fidela-icon name="logout" [size]="17" />
+      </button>
+    </div>
+  }
+</header>
+
+<main>
+  @if (tab() === 'documents') {
+    <div class="page-head">
+      <div>
+        <h1>Good to see you, {{ firstName() }}</h1>
+        <p>{{ counts().todo }} {{ counts().todo === 1 ? 'document is' : 'documents are' }} waiting in the queue.</p>
+      </div>
+      <button type="button" class="ghost" (click)="load()"><fidela-icon name="refresh" [size]="15" /> Refresh</button>
+    </div>
+
+    <section class="kpis">
+      @for (kpi of kpis(); track kpi.label) {
+        <article class="kpi" [attr.data-tone]="kpi.tone">
+          <span class="kpi-icon"><fidela-icon [name]="kpi.icon" [size]="18" /></span>
+          <span class="kpi-value">{{ kpi.value }}</span>
+          <span class="kpi-label">{{ kpi.label }}</span>
+        </article>
+      }
+    </section>
+
+    <section class="panel">
+      <div class="toolbar">
+        <div class="filters">
+          @for (f of filters; track f.id) {
+            <button type="button" [class.active]="filter() === f.id" (click)="filter.set(f.id)">
+              {{ f.label }} <span [class.warn]="f.id === 'attention' && counts()[f.id]">{{ counts()[f.id] }}</span>
+            </button>
+          }
+        </div>
+        <label class="search">
+          <fidela-icon name="search" [size]="15" />
+          <input type="search" placeholder="Reference, name or email" [value]="search()" (input)="search.set(value($event))" />
+        </label>
+      </div>
+
+      @if (error(); as message) {
+        <p class="error"><fidela-icon name="alert" [size]="14" /> {{ message }}</p>
+      }
+      @if (notice(); as message) {
+        <p class="notice"><fidela-icon name="check" [size]="14" /> {{ message }}</p>
+      }
+
+      @if (loading()) {
+        <div class="empty"><span class="spinner"></span> Loading documents…</div>
+      } @else if (!visible().length) {
+        <div class="empty">
+          <span class="empty-icon"><fidela-icon name="inbox" [size]="22" /></span>
+          <strong>Nothing here</strong>
+          <span>New uploads from the website appear in “To do”.</span>
+        </div>
+      } @else {
+        <table>
+          <thead>
+            <tr>
+              <th>Order</th>
+              <th>Client</th>
+              <th>Pages</th>
+              <th>Languages</th>
+              <th>Status</th>
+              <th>Translator</th>
+              <th>Received</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (doc of visible(); track doc.id) {
+              <tr [class.clickable]="canOpen(doc)" (dblclick)="canOpen(doc) && open(doc)">
+                <td>
+                  <code>{{ doc.reference }}</code>
+                  <small class="files" [title]="doc.files.join(', ')">{{ doc.files.length }} {{ doc.files.length === 1 ? 'file' : 'files' }}</small>
+                </td>
+                <td>
+                  <span class="client">{{ doc.client_name }}</span>
+                  <small>{{ doc.client_email }}</small>
+                </td>
+                <td>{{ doc.page_count || '—' }}</td>
+                <td><span class="langs">{{ doc.source_language }} <fidela-icon name="arrowRight" [size]="12" /> {{ doc.target_language }}</span></td>
+                <td>
+                  <span class="status" [attr.data-status]="doc.status" [title]="doc.error ?? ''">
+                    @if (doc.status === 'processing' || doc.status === 'uploaded') {
+                      <span class="spinner small"></span>
+                    }
+                    {{ labels[doc.status] }}
+                  </span>
+                </td>
+                <td>
+                  @if (doc.assigned_to_name) {
+                    <span class="assignee" [class.mine]="isMine(doc)">
+                      <span class="avatar small">{{ initials(doc.assigned_to_name) }}</span>
+                      {{ isMine(doc) ? 'You' : doc.assigned_to_name }}
+                    </span>
+                  } @else {
+                    <span class="muted">Unassigned</span>
+                  }
+                </td>
+                <td [title]="doc.created_at | date: 'medium'"><span class="muted">{{ timeAgo(doc.created_at) }}</span></td>
+                <td class="actions">
+                  @if (doc.status !== 'approved') {
+                    <button type="button" class="icon-action" (click)="openClearer(doc)" title="Ask the client for a clearer copy">
+                      <fidela-icon name="mail" [size]="15" />
+                    </button>
+                  }
+                  @if (doc.status === 'failed') {
+                    <button type="button" class="ghost small" [disabled]="busyId() === doc.id" (click)="retry(doc)" [title]="doc.error ?? ''">
+                      <fidela-icon name="refresh" [size]="14" /> Retry
+                    </button>
+                  }
+                  @if (doc.status === 'ready' && !doc.assigned_to) {
+                    <button type="button" class="ghost small" [disabled]="busyId() === doc.id" (click)="claim(doc)">Claim</button>
+                  }
+                  @if (canOpen(doc)) {
+                    <button type="button" class="primary small" (click)="open(doc)">
+                      {{ doc.status === 'approved' ? 'View' : doc.status === 'in_review' ? 'Continue' : 'Start review' }}
+                      <fidela-icon name="arrowRight" [size]="14" />
+                    </button>
+                  }
+                </td>
+              </tr>
+              @if (doc.status === 'failed' && doc.error) {
+                <tr class="error-row">
+                  <td colspan="8"><fidela-icon name="alert" [size]="13" /> {{ doc.error }}</td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+  } @else {
+    <div class="page-head">
+      <div>
+        <h1>Team</h1>
+        <p>Translators and managers who can sign in to Fidela.</p>
+      </div>
+    </div>
+
+    <div class="team">
+      <section class="panel">
+        <table>
+          <thead>
+            <tr><th>Name</th><th>Email</th><th>Profile</th></tr>
+          </thead>
+          <tbody>
+            @for (user of users(); track user.id) {
+              <tr>
+                <td><span class="assignee"><span class="avatar small">{{ initials(user.full_name) }}</span> {{ user.full_name }}</span></td>
+                <td class="muted">{{ user.email }}</td>
+                <td><span class="role" [attr.data-role]="user.role">{{ user.role }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+
+      <form class="panel new-user" (submit)="createUser($event)">
+        <h2>Add a person</h2>
+        <label><span>Full name</span><input type="text" [value]="newUser().full_name" (input)="updateNewUser('full_name', $event)" /></label>
+        <label><span>Email</span><input type="email" [value]="newUser().email" (input)="updateNewUser('email', $event)" /></label>
+        <label>
+          <span>Profile</span>
+          <select (change)="updateNewUser('role', $event)">
+            <option value="translator" [selected]="newUser().role === 'translator'">Certified translator</option>
+            <option value="manager" [selected]="newUser().role === 'manager'">Manager</option>
+            <option value="client" [selected]="newUser().role === 'client'">Client</option>
+          </select>
+        </label>
+        @if (teamError(); as message) {
+          <p class="error"><fidela-icon name="alert" [size]="14" /> {{ message }}</p>
+        }
+        @if (teamNotice(); as message) {
+          <p class="notice"><fidela-icon name="check" [size]="14" /> {{ message }}</p>
+        }
+        <p class="form-hint"><fidela-icon name="mail" [size]="14" /> We’ll email them a link to choose their own password.</p>
+        <button type="submit" class="primary">Send invitation</button>
+      </form>
+    </div>
+  }
+</main>
+
+@if (clearerFor(); as doc) {
+  <div class="backdrop" (click)="clearerFor.set(null)"></div>
+  <form class="dialog" role="dialog" aria-modal="true" aria-labelledby="clearer-title" (submit)="sendClearer($event)">
+    <h2 id="clearer-title">Ask for a clearer copy</h2>
+    <p class="dialog-lead">
+      We’ll email <strong>{{ doc.client_name }}</strong> ({{ doc.client_email }}) about order
+      <code>{{ doc.reference }}</code> with tips for a better photo or scan.
+    </p>
+    <label>
+      <span>Note for the client <em>(optional)</em></span>
+      <textarea
+        rows="4"
+        placeholder="e.g. The bottom of page 2 is cut off — please include the whole page."
+        [value]="clearerMessage()"
+        (input)="clearerMessage.set(value($event))"
+        autofocus
+      ></textarea>
+    </label>
+    <div class="dialog-actions">
+      <button type="button" class="ghost" (click)="clearerFor.set(null)">Cancel</button>
+      <button type="submit" class="primary" [disabled]="clearerBusy()">
+        <fidela-icon name="mail" [size]="15" /> {{ clearerBusy() ? 'Sending…' : 'Send email' }}
+      </button>
+    </div>
+  </form>
+}

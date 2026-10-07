@@ -16,7 +16,7 @@
         AI {{ (cell.confidence * 100).toFixed(0) }}%
       </span>
       @if (verified) {
-        <span class="chip ok"><fiel-icon name="check" [size]="11" /> Verified</span>
+        <span class="chip ok"><fidela-icon name="check" [size]="11" /> Verified</span>
       }
     </div>
   </header>
@@ -24,7 +24,7 @@
   @if (field.issues.length && !verified) {
     <div class="issues">
       @for (issue of field.issues; track issue) {
-        <p><fiel-icon name="alert" [size]="13" /> {{ issue }}</p>
+        <p><fidela-icon name="alert" [size]="13" /> {{ issue }}</p>
       }
     </div>
   }
@@ -86,13 +86,13 @@
             />
             <div class="segmented">
               <button type="button" [class.active]="image.x === 0" (click)="store.updateCellImage(field.key, { x: 0 })" title="Align left">
-                <fiel-icon name="alignLeft" [size]="14" />
+                <fidela-icon name="alignLeft" [size]="14" />
               </button>
               <button type="button" [class.active]="image.x === 50" (click)="store.updateCellImage(field.key, { x: 50 })" title="Center">
-                <fiel-icon name="alignCenter" [size]="14" />
+                <fidela-icon name="alignCenter" [size]="14" />
               </button>
               <button type="button" [class.active]="image.x === 100" (click)="store.updateCellImage(field.key, { x: 100 })" title="Align right">
-                <fiel-icon name="alignRight" [size]="14" />
+                <fidela-icon name="alignRight" [size]="14" />
               </button>
             </div>
           </div>
@@ -120,11 +120,11 @@
         <div class="image-actions">
           @if (cell.box.length === 4) {
             <button type="button" [disabled]="store.locked()" (click)="store.useSuggestedCrop(field.key)" title="Crop the area the AI detected for this field">
-              <fiel-icon name="sparkles" [size]="14" /> Crop AI area
+              <fidela-icon name="sparkles" [size]="14" /> Crop AI area
             </button>
           }
           <button type="button" [disabled]="store.locked()" (click)="store.startCrop({ target: 'cell', key: field.key })" title="Draw the area on the original">
-            <fiel-icon name="crop" [size]="14" /> Select area…
+            <fidela-icon name="crop" [size]="14" /> Select area…
           </button>
         </div>
         <p class="hint">Or drag an image from the Library onto this field.</p>
@@ -149,11 +149,11 @@
   <div class="footer">
     @if (verified) {
       <button type="button" class="verify done" [disabled]="store.locked()" (click)="store.unverify(field.key)">
-        <fiel-icon name="check" /> Verified · undo
+        <fidela-icon name="check" /> Verified · undo
       </button>
     } @else {
       <button type="button" class="verify" [disabled]="store.locked()" (click)="store.verifyAndNext()">
-        <fiel-icon name="check" /> Verify &amp; next <kbd>⏎</kbd>
+        <fidela-icon name="check" /> Verify &amp; next <kbd>⏎</kbd>
       </button>
     }
     <p class="shortcuts"><kbd>Tab</kbd> next · <kbd>⇧ Tab</kbd> previous · <kbd>⇧ ⏎</kbd> new line</p>
@@ -177,17 +177,17 @@
           <input type="number" min="6" max="48" [value]="t.fontSize" (input)="patch({ fontSize: number($event) })" />
         </label>
         <button type="button" class="tool" [class.active]="t.bold" (click)="patch({ bold: !t.bold })" title="Bold">
-          <fiel-icon name="bold" [size]="14" />
+          <fidela-icon name="bold" [size]="14" />
         </button>
         <div class="segmented">
           <button type="button" [class.active]="t.align === 'left'" (click)="patch({ align: 'left' })" title="Align left">
-            <fiel-icon name="alignLeft" [size]="14" />
+            <fidela-icon name="alignLeft" [size]="14" />
           </button>
           <button type="button" [class.active]="t.align === 'center'" (click)="patch({ align: 'center' })" title="Center">
-            <fiel-icon name="alignCenter" [size]="14" />
+            <fidela-icon name="alignCenter" [size]="14" />
           </button>
           <button type="button" [class.active]="t.align === 'right'" (click)="patch({ align: 'right' })" title="Align right">
-            <fiel-icon name="alignRight" [size]="14" />
+            <fidela-icon name="alignRight" [size]="14" />
           </button>
         </div>
       </div>
@@ -230,14 +230,14 @@
   </div>
 
   <div class="actions">
-    <button type="button" (click)="store.reorderOverlay(overlay.id, true)" title="Bring to front"><fiel-icon name="front" [size]="14" /></button>
-    <button type="button" (click)="store.reorderOverlay(overlay.id, false)" title="Send to back"><fiel-icon name="back" [size]="14" /></button>
-    <button type="button" (click)="store.duplicateOverlay(overlay.id)" title="Duplicate"><fiel-icon name="copy" [size]="14" /></button>
-    <button type="button" class="danger" (click)="store.removeOverlay(overlay.id)" title="Delete (⌫)"><fiel-icon name="trash" [size]="14" /> Delete</button>
+    <button type="button" (click)="store.reorderOverlay(overlay.id, true)" title="Bring to front"><fidela-icon name="front" [size]="14" /></button>
+    <button type="button" (click)="store.reorderOverlay(overlay.id, false)" title="Send to back"><fidela-icon name="back" [size]="14" /></button>
+    <button type="button" (click)="store.duplicateOverlay(overlay.id)" title="Duplicate"><fidela-icon name="copy" [size]="14" /></button>
+    <button type="button" class="danger" (click)="store.removeOverlay(overlay.id)" title="Delete (⌫)"><fidela-icon name="trash" [size]="14" /> Delete</button>
   </div>
 } @else {
   <div class="empty">
-    <div class="empty-icon"><fiel-icon name="keyboard" [size]="22" /></div>
+    <div class="empty-icon"><fidela-icon name="keyboard" [size]="22" /></div>
     <h2>{{ store.approved() ? 'Approved and locked' : 'Select a field to review' }}</h2>
     <p>
       {{ store.approved()

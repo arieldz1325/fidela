@@ -309,3 +309,63 @@
     box-shadow: none;
   }
 }
+
+.doc-name {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+
+  code {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  small {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+}
+
+.ghost.save {
+  color: var(--text-muted);
+
+  &.dirty {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+// Keep every item on one line; secondary bits give way first on narrower screens.
+.doc-name code,
+.status,
+.progress,
+.attention,
+.segmented button,
+.ghost,
+.primary,
+.secondary {
+  white-space: nowrap;
+}
+
+:host {
+  gap: 12px;
+}
+
+@media (max-width: 1500px) {
+  .progress .bar,
+  .brand-name {
+    display: none;
+  }
+}
+
+@media (max-width: 1200px) {
+  .doc-name small,
+  .zoom {
+    display: none;
+  }
+}

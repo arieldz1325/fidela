@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, afterRenderEffect, computed, inject, signal } from '@angular/core';
 import { FieldRef, fieldPreview, fieldTitle } from '../editor.models';
 import { EditorStore } from '../editor.store';
-import { Icon } from '../ui/icon';
+import { Icon } from '../../shared/icon';
 
 type Filter = 'all' | 'attention' | 'pending';
 

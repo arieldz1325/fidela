@@ -4,7 +4,7 @@ import {
 import { LOW_CONFIDENCE } from '../../fiel-document/fiel-document.model';
 import { OverlayPatch, fieldTitle, humanize } from '../editor.models';
 import { EditorStore } from '../editor.store';
-import { Icon } from '../ui/icon';
+import { Icon } from '../../shared/icon';
 
 @Component({
   selector: 'fiel-inspector',

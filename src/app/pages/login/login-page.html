@@ -1,0 +1,71 @@
+<div class="layout">
+  <aside class="brand-panel">
+    <a routerLink="/" class="brand"><span class="mark">F</span> Fidela Translations</a>
+    <div class="brand-copy">
+      <h2>The workspace for certified translators.</h2>
+      <p>Review AI-prepared drafts side by side with the original, apply your seal and signature, and deliver certified PDFs.</p>
+      <ul>
+        <li><fidela-icon name="check" [size]="15" /> Every field checked against the original</li>
+        <li><fidela-icon name="check" [size]="15" /> Versioned, locked approvals</li>
+        <li><fidela-icon name="check" [size]="15" /> Your professional identity on every page</li>
+      </ul>
+    </div>
+    <span class="brand-foot">© Fidela Translations</span>
+  </aside>
+
+  <main class="form-panel">
+    <a routerLink="/" class="back"><fidela-icon name="arrowLeft" [size]="15" /> Back to site</a>
+
+    <form (submit)="submit($event)" novalidate>
+      <h1>Sign in</h1>
+      <p class="subtitle">Translators, managers and clients with an account.</p>
+
+      @if (expired()) {
+        <p class="notice"><fidela-icon name="clock" [size]="14" /> Your session expired. Please sign in again.</p>
+      }
+
+      <label class="field">
+        <span>Email</span>
+        <input type="email" autocomplete="username" [value]="email()" (input)="email.set(value($event))" autofocus />
+      </label>
+
+      <label class="field">
+        <span>Password</span>
+        <div class="password">
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            autocomplete="current-password"
+            [value]="password()"
+            (input)="password.set(value($event))"
+          />
+          <button type="button" (click)="showPassword.set(!showPassword())" [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
+            <fidela-icon name="eye" [size]="16" />
+          </button>
+        </div>
+      </label>
+
+      <a class="forgot" routerLink="/forgot-password">Forgot your password?</a>
+
+      @if (error(); as message) {
+        <p class="error"><fidela-icon name="alert" [size]="14" /> {{ message }}</p>
+      }
+
+      <button type="submit" class="submit" [disabled]="busy()">
+        {{ busy() ? 'Signing in…' : 'Sign in' }}
+      </button>
+
+      <p class="alt">Just need a translation? <a routerLink="/">Upload your documents</a> — no account needed.</p>
+    </form>
+
+    @if (demoAccounts.length) {
+      <div class="demo">
+        <span class="demo-title">Development accounts</span>
+        @for (account of demoAccounts; track account.email) {
+          <button type="button" (click)="useDemo(account)">
+            <strong>{{ account.role }}</strong> {{ account.email }}
+          </button>
+        }
+      </div>
+    }
+  </main>
+</div>

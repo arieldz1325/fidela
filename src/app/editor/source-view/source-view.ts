@@ -4,7 +4,7 @@ import {
 } from '@angular/core';
 import { boxToPercentStyle, clamp } from '../editor.models';
 import { EditorStore } from '../editor.store';
-import { Icon } from '../ui/icon';
+import { Icon } from '../../shared/icon';
 
 interface View {
   x: number;

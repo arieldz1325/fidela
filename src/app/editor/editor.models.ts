@@ -1,5 +1,5 @@
 import { FielCell, LOW_CONFIDENCE } from '../fiel-document/fiel-document.model';
-import { IconName } from './ui/icon';
+import { IconName } from '../shared/icon';
 
 /** Letter size at 96 dpi. */
 export const PAGE_WIDTH = 816;
