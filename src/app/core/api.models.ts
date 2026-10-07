@@ -1,7 +1,8 @@
 import { FielDocument } from '../fiel-document/fiel-document.model';
 
 /** Base URL of the Fidela API (fidelaapi repo). */
-export const API_URL = 'http://localhost:8000';
+// export const API_URL = 'http://localhost:8000';
+export const API_URL = 'https://fidelaapi.onrender.com';
 
 export type Role = 'client' | 'translator' | 'manager';
 
