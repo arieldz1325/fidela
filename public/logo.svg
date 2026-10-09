@@ -1,0 +1,21 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="256" height="256" fill="white" rx="12"/>
+
+  <!-- Main icon: stylized checkmark/document -->
+  <g transform="translate(40, 40)">
+    <!-- Document shape -->
+    <rect x="30" y="0" width="110" height="140" fill="#0052CC" rx="4"/>
+
+    <!-- Left accent bar -->
+    <rect x="0" y="0" width="24" height="140" fill="#FF6B35" rx="4"/>
+
+    <!-- Checkmark inside document -->
+    <path d="M 60 55 L 75 70 L 105 40" stroke="white" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Translation indicator: horizontal lines -->
+    <line x1="45" y1="95" x2="125" y2="95" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+    <line x1="45" y1="110" x2="115" y2="110" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+    <line x1="45" y1="125" x2="105" y2="125" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+  </g>
+</svg>

@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /dashboard
+Disallow: /editor
+Disallow: /review
+Disallow: /forgot-password
+Disallow: /reset-password
+
+# Sitemaps
+Sitemap: https://www.fidelatranslations.ca/sitemap.xml
+
+# Google Search Console
+User-agent: Googlebot
+Allow: /
+Disallow: /login
+Disallow: /dashboard
+Disallow: /editor
+Disallow: /review
+Disallow: /forgot-password
+Disallow: /reset-password
